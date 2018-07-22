@@ -1,0 +1,240 @@
+---
+title: "Lesson3"
+output: html_document
+---
+
+## Reading in Data
+```{r}
+library(ggplot2)
+list.files()
+
+pf<-read.csv('pseudo_facebook.tsv',sep = '\t')
+```
+
+
+## Histogram Of Users' Birthdays
+```{r}
+library(ggplot2)
+
+names(pf)
+
+ggplot(aes(x = dob_day), data = pf) +
+  geom_histogram(binwidth = 1) +
+  scale_x_continuous(breaks = 1:31)
+```
+
+
+
+
+
+
+
+```{r}
+ggplot(data = pf, aes(x = dob_day)) +
+  geom_histogram(binwidth = 1) +
+  scale_x_continuous(breaks = 1:31) +
+  facet_wrap(~dob_month)
+
+```
+
+# Limiting the Axes
+```{r}
+ggplot(aes(x = friend_count), data = pf) +
+  geom_histogram() +
+  scale_x_continuous(limits = c(0, 1000))
+```
+
+## Adjusting the bin with
+```{r}
+ggplot(aes(x = friend_count), data = pf) +
+  geom_histogram() +
+  scale_x_continuous(limits = c(0, 1000), breaks= seq(0,1000,50))
+
+
+```
+
+#Quiz based, who has more friends by gender?
+```{r}
+ggplot(aes(x = friend_count), data = pf) +
+  geom_histogram() +
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) +
+  facet_wrap(~gender)
+```
+
+
+
+
+#Obmitting NA-missing values, using by subset
+```{r}
+ggplot(aes(x = friend_count), data = subset(pf,!is.na(gender))) +
+  geom_histogram() +
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) +
+  facet_wrap(~gender)
+```
+
+# OBmitting Any NA Observations
+```{r}
+ggplot(aes(x = friend_count), data = na.omit(pf)) +
+  geom_histogram() +
+  scale_x_continuous(limits = c(0, 1000), breaks = seq(0, 1000, 50)) +
+  facet_wrap(~gender)
+```
+
+##Satistics 'by'Gender
+```{r}
+table(pf$gender)
+by(pf$friend_count,pf$gender,summary)
+```
+##Tenure Solution
+```{r}
+ggplot(aes(x = tenure/365), data = pf, binwidth= 1) +
+  geom_histogram(binwidth = .25, color = 'black', fill = '#F79420')+
+  scale_x_continuous(breaks = seq(1,7,1),limits = c(0,7))
+  
+```
+#Labeling Plots
+```{r}
+ggplot(aes(x = tenure / 365), data = pf) +
+  geom_histogram(color = 'black', fill = '#F79420') +
+  scale_x_continuous(breaks = seq(1, 7, 1), limits = c(0, 7)) +
+  xlab('Number of years using Facebook') +
+  ylab('Number of users in sample')
+
+```
+
+## User Ages 
+```{r}
+ggplot(aes(x = age), data = pf) +
+  geom_histogram(binwidth = 1, fill = '#5760AB') +
+  scale_x_continuous(breaks = seq(13, 113,30)) 
+```
+## Transforming Data
+```{r}
+orginal=ggplot(aes(x=friend_count),data = pf) + geom_histogram()
+orginal
+
+summary (pf$friend_count)
+summary(log10(pf$friend_count +1))
+summary(sqrt(pf$friend_count))
+```
+
+## Transforming the Data Quiz
+```{r}
+install.packages('gridExtra')
+library(gridExtra)
+
+p1=ggplot(aes(x=friend_count),data = pf) + geom_histogram()+xlab("Friend Count")
+
+p2= p1+ geom_histogram()+ scale_x_log10()+ xlab("log10(Friend Count)")
+
+p3= p1+ geom_histogram()+ scale_x_sqrt()+ xlab("sqrt(Friend Count)")
+
+
+#Now we group them 
+
+grid.arrange(p1,p2,p3, ncol=1)
+
+
+
+
+```
+## Add a Scaling layer
+
+```{r}
+logScale<-qplot(x=log10(friend_count),data=pf)
+
+countScale <- ggplot(aes(x=friend_count),data=pf)+
+  geom_histogram() +
+  scale_x_log10()
+
+grid.arrange(logScale,countScale,ncol=2)
+
+## Do note that ggplot x axis name does not change the name so it manueally had to be changed
+```
+
+## Frequently Polygons (before we had histograms)
+```{r}
+##This allows us to see the peak
+qplot(x=friend_count, data= subset(pf,!is.na(gender)),binwidth= 10)+
+  scale_x_continuous(lim=c(0,1000), breaks=seq(0,1000,50))
+
+
+
+##Note that the shape of the frequency polygon depends on how our bins are set up - the height of the lines are the same as the bars in individual histograms, but the lines are easier to make a comparison with since they are on the same axis.
+ggplot(aes(x = friend_count, y = ..count../sum(..count..)),
+       data = subset(pf, !is.na(gender))) +
+  geom_freqpoly(aes(color = gender), binwidth=10) +
+  scale_x_continuous(limits = c(0, 4000), breaks = seq(0, 4000, 250)) +
+  xlab('Friend Count') +
+  ylab('Proportion of users with that friend count')+
+  scale_x_sqrt()
+```
+## Frequency Polygons Solution
+```{r}
+ggplot(aes(x = www_likes), data = subset(pf, !is.na(gender))) +
+  geom_freqpoly(aes(color = gender)) +
+  scale_x_log10()
+```
+
+## Likes on the Web Solution 
+```{r}
+
+#denote this new information
+by(pf$www_likes, pf$gender, sum)
+```
+
+
+
+## Box Plots
+```{r}
+ggplot(aes(x=gender, y = friend_count), data=subset(pf,!is.na(gender)))+geom_boxplot() + scale_y_continuous(limits = c(0,1000))
+
+## This is correct but most of the data gets deleted. 
+ggplot(aes(x=gender, y = friend_count), data=subset(pf,!is.na(gender)))+geom_boxplot() + coord_cartesian(ylim = c(0,1000))
+```
+
+```{r}
+ggplot(aes(x=gender, y = friend_count), data=subset(pf,!is.na(gender)))+geom_boxplot() + coord_cartesian(ylim = c(0,250))
+
+by(pf$friend_count, pf$gender, summary)
+```
+
+### Box plots, Quartiles, and Friend Requests Solutions
+```{r}
+colnames(pf)
+ggplot(aes(x=gender, y = friendships_initiated), data=subset(pf,!is.na(gender)))+geom_boxplot() + coord_cartesian(ylim = c(0,150))
+
+```
+## Getting Logical
+```{r}
+summary(pf$mobile_likes)
+
+summary(pf$mobile_likes >0)
+
+mobile_check_in<-NA
+
+pf$mobile_check_in<-ifelse(pf$mobile_likes> 0,1,0)
+pf$mobile_check_in<-factor(pf$mobile_check_in)
+
+head(pf$mobile_check_in)
+
+summary(pf$mobile_check_in)
+```
+
+# Getting Logical Solution
+What percentage of check in using mobile?
+```{r}
+
+#My response
+total_checked=length(pf$mobile_check_in)
+total_checked
+
+summary(pf$mobile_check_in)/total_checked
+
+## OR
+
+sum(pf$mobile_check_in==1)/length(pf$mobile_check_in)
+```
+
+# CONGRATULATIONS
+#### You'll be exploring data soon with your new knowledge of R.

@@ -1,0 +1,187 @@
+---
+title: 'Lesson6: Problem Set: Explore Two Variables'
+author: "Beltino Goncalves"
+date: "October 31, 2017"
+output: html_document
+---
+
+# Import Library
+```{r}
+library(ggplot2)
+
+data("diamonds")
+?diamonds()
+
+colnames(diamonds)
+ p1 = ggplot(aes(x=x, y= price),data= diamonds)
+ 
+ p1 + geom_point(alpha= 1/15) + geom_smooth()
+```
+
+## Correlation
+
+```{r}
+# What is the correlation betweem price and x?
+with(diamonds, cor.test(price,x, method="pearson"))
+
+# What is the correlation between price and y?
+with(diamonds, cor.test(price,y, method="pearson"))
+
+# What os tje correlation between price and z?
+with(diamonds, cor.test(price,z, method="pearson"))
+```
+
+
+# Price vs. depth
+```{r}
+p1<-ggplot(aes(x= depth, y=price), data=diamonds)
+
+p1 + geom_point() + geom_smooth()
+```
+
+# Adjustments Price vs. depth
+
+```{r}
+p1 <- ggplot(data = diamonds, aes(x = depth, y = price))
+
+p1 + geom_point(alpha=1/100) +
+  scale_x_continuous(breaks = c(50,70,2))
+
+range(diamonds$depth)
+```
+
+# Typical Depth Range
+```{r}
+p1 <- ggplot(data = diamonds, aes(x = depth, y = price))
+
+p1 + geom_point(alpha=1/100) +
+  scale_x_continuous(breaks = c(59,64,2))
+
+range(diamonds$cut)
+```
+
+# Correlation - price and depth
+```{r}
+with(diamonds, cor.test(depth, price, method = "pearson")) 
+```
+Note : This correlation is pretty much stating that based on the correlation coefficient of -0.01, predicting the price of a diamond would nearly impossible, because the two variables do not have an correlation. 
+
+
+# Price vs. Carat
+```{r}
+p1 <- ggplot(aes(x=carat, y= price),data = diamonds) 
+
+p1 + geom_point() + 
+  xlim(0, quantile(diamonds$carat, .99)) + 
+  ylim(0, quantile(diamonds$price, .99))
+```
+
+
+## Price vs. Volume
+
+```{r}
+
+p1 <-ggplot(aes(x*y*z,price), data= diamonds)
+
+p1 + geom_point()
+```
+
+Note: The scatterplot from the price vs. volume appears to have a vertical correlation with the price, but the amount of volume is less than 500. There are these outliers at zero volume, but their pretty expensive. There are about 20 diamonds that have 0 volume. 
+
+## Finding out how many diamonds have 0 volume. 
+```{r}
+library(plyr)
+
+diamonds$volume <- diamonds$x * diamonds$y * diamonds$z
+
+
+count(diamonds$volume == 0)
+```
+
+# Correlation subset
+
+```{r}
+
+sub_diamonds<-subset(diamonds, volume >= 1 & volume <800)
+
+with(sub_diamonds, cor.test(price,volume, method = "pearson"))
+```
+Note: There is a correlation of 92% between these two variables. When diamonds that have a volume of 0 or that are greater than or equal to 800. 
+
+
+
+#Adjustment - Price vs. Volume
+```{r}
+
+p1 <- ggplot(aes(price,volume), data= sub_diamonds)
+
+p1 + geom_point()+ geom_smooth()
+```
+
+Note: Based on having a correlation so high, it is possible for the our model to estimate the price of diamonds. 
+
+# Mean Price by Clarity
+
+```{r}
+library(dplyr)
+
+
+diamondsByClarity<-diamonds %>%
+  group_by(clarity)%>%
+  summarise(mean_price= mean(price),
+            median_price= median(price),
+            min_price=min(price),
+            max_price=max(price),
+            n=n())%>%
+  arrange(clarity)
+
+```
+
+
+#Bar Charts of Mean Price
+
+Create two bar plots
+on one output image using the grid.arrange() function from the package
+gridExtra.
+
+```{r}
+diamonds_by_clarity <- group_by(diamonds, clarity)
+diamonds_mp_by_clarity <- summarise(diamonds_by_clarity, mean_price = mean(price))
+diamonds_mp_by_clarity
+
+diamonds_by_color <- group_by(diamonds, color)
+diamonds_mp_by_color <- summarise(diamonds_by_color, mean_price = mean(price))
+diamonds_mp_by_color
+
+
+## adding the mean price across cut.
+
+diamonds_by_cut <- group_by(diamonds,cut)
+diamonds_mp_by_cut <- summarise(diamonds_by_cut, mean_price=
+                                  mean(price))
+
+
+
+
+
+
+
+p1<- ggplot(aes(clarity,mean_price, fill=clarity), data = diamonds_mp_by_clarity) + geom_bar(stat = "Identity")
+
+p2<- ggplot(aes(color, mean_price, fill=color), data= diamonds_mp_by_color) +
+  geom_bar(stat = "Identity")
+
+p3<- ggplot(aes(cut, mean_price, fill=cut), data= diamonds_mp_by_cut) +geom_bar(stat = "Identity")
+
+
+grid.arrange(p1,p2,p3)
+
+```
+Note:The worst clarity measurement, on average is priced higher then those diamonds that have clarity of IF OR WS1, which is nearly the best diamonds. Also, diamonds that have the worst color would be sold at a higher price than those with the best color. The worst color is categorized as I  and J, usually can be the best color based on the color of the diamond is rare. # Now by adding the cut of the diamond, on average the price of Fair and Premium would be sold at the same range based on the cut. We can interpret that diamonds with fair cut would be the best comparing the premium and ideal.
+
+#Gapminder Reviseted
+
+```{r}
+
+
+```

@@ -1,0 +1,409 @@
+Lesson 5
+========================================================
+
+```{r}
+pf<- read.delim('pseudo_facebook.tsv')
+
+library(ggplot2)
+
+```
+
+
+### Multivariate Data
+Notes:
+
+***
+
+### Moira Perceived Audience Size Colored by Age
+Notes:
+
+***
+
+### Third Qualitative Variable
+Notes: The
+
+```{r Third Qualitative Variable}
+ggplot(aes(x = gender, y = age),
+       data = subset(pf, !is.na(gender))) + geom_boxplot() + 
+  stat_summary(fun.y = mean, geom='point', shape = 4)
+
+ggplot(aes(x=age, y=friend_count),
+       data= subset(pf, !is.na(gender))) +
+  geom_line(aes(color = gender), stat='summary', fun.y=median)
+
+pf.fc_by_age_gender <- pf %>%
+  filter(!is.na(gender)) %>%
+  group_by(age,gender) %>%
+  summarise( mean_friend_count = mean(friend_count),
+             median_friend_count = median(friend_count),
+             n = n()) %>%
+  ungroup() %>%
+  arrange(age)
+head(pf.fc_by_age_gender)
+
+
+
+```
+
+***
+
+### Plotting Conditional Summaries
+Notes:
+
+```{r Plotting Conditional Summaries}
+ggplot(aes(x=age, y=median_friend_count),
+       data= pf.fc_by_age_gender) +
+  geom_line(aes(color = gender))
+```
+
+***
+
+### Thinking in Ratios
+Notes: This would be usefull to understand the difference between gender by age. 
+
+***
+
+### Wide and Long Format
+Notes: We convert into wide format by using the tidyr package. 
+
+***
+
+### Reshaping Data
+Notes:
+
+```{r}
+install.packages('reshape2')
+library(reshape2)
+
+
+
+pf.fc_by_age_gender.wide <- dcast(pf.fc_by_age_gender,
+                                  age~gender,
+                                  value.var='median_friend_count')
+head(pf.fc_by_age_gender.wide)
+
+```
+
+
+***
+
+### Ratio Plot
+Notes:
+
+```{r Ratio Plot}
+ggplot(aes(age,female/male), data = pf.fc_by_age_gender.wide) + 
+  geom_line() + 
+       geom_hline(yintercept = 1, alpha=.3, linetype=5) 
+```
+
+***
+
+### Third Quantitative Variable
+Notes:
+
+```{r Third Quantitative Variable}
+# Create a variable called year_joined
+# in the pf data frame using the variable
+# tenure and 2014 as the reference year.
+
+# The variable year joined should contain the year
+# that a user joined facebook.
+
+pf$year_joined<-floor(2014-pf$tenure/365)
+
+```
+
+***
+
+### Cut a Variable
+Notes:
+
+```{r Cut a Variable}
+summary(pf$year_joined)
+
+table(pf$year_joined)
+
+?cut()
+
+##create buckets
+pf$year_joined.bucket <- cut(pf$year_joined, breaks =c(2004,2009,2011,2012,2014))
+table(pf$year_joined.bucket)
+
+
+```
+
+***
+
+### Plotting it All Together
+Notes: User with longer tenure had large amount of friends headcounts
+
+```{r Plotting it All Together}
+##checking the table 
+
+table(pf$year_joined.bucket, useNA = "ifany")
+
+
+ggplot(aes(x = age, y = friend_count),
+       data = subset(pf, !is.na(year_joined.bucket))) +
+  geom_line(aes(color = year_joined.bucket), stat = 'summary', fun.y = median)
+
+```
+
+***
+
+### Plot the Grand Mean
+Notes:
+
+```{r Plot the Grand Mean}
+ggplot(aes(x = age, y = friend_count),
+       data = subset(pf, !is.na(year_joined.bucket))) +
+  geom_line(aes(color = year_joined.bucket), stat = 'summary', fun.y = mean) +
+  geom_line(stat = 'summary', fun.y = mean, linetype=2)
+```
+
+***
+
+### Friending Rate
+Notes:
+
+```{r Friending Rate}
+ggplot(aes(x = age, y = friend_count),
+       data = subset(pf, !is.na(year_joined.bucket))) +
+  geom_line(aes(color = year_joined.bucket), stat = 'summary', fun.y = mean)
+
+with(subset(pf, tenure >= 1), summary(friend_count/tenure))
+with(subset(pf, tenure >= 1 ), summary(friend_count/tenure))
+```
+
+***
+
+### Friendships Initiated
+Notes:
+
+What is the median friend rate? 0.2205
+
+What is the maximum friend rate? 417.0000
+
+```{r Friendships Initiated}
+
+colnames(pf)
+
+ggplot(aes(tenure,friendships_initiated/tenure), data=subset(pf, tenure >= 1))+ 
+  geom_line(aes(color = year_joined.bucket), stat = 'summary', fun.y = mean)
+  
+
+
+```
+
+***
+
+### Bias-Variance Tradeoff Revisited
+Notes:
+
+```{r Bias-Variance Tradeoff Revisited}
+
+p1<-ggplot(aes(x = tenure, y = friendships_initiated / tenure),
+       data = subset(pf, tenure >= 1)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = 'summary',
+            fun.y = mean) +
+  geom_smooth()
+p2<- ggplot(aes(x = 7 * round(tenure / 7), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = "summary",
+            fun.y = mean) +
+  geom_smooth()
+p3<-ggplot(aes(x = 30 * round(tenure / 30), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = "summary",
+            fun.y = mean) +
+  geom_smooth()
+
+p4<-ggplot(aes(x = 90 * round(tenure / 90), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_line(aes(color = year_joined.bucket),
+            stat = "summary",
+            fun.y = mean)+
+  geom_smooth()
+
+grid.arrange(p1,p2,p3,p4)
+
+ggplot(aes(x = 7 * round(tenure / 7), y = friendships_initiated / tenure),
+       data = subset(pf, tenure > 0)) +
+  geom_smooth(aes(color = year_joined.bucket))
+
+## Smooth Version of the graph example 
+```
+
+***
+
+### Sean's NFL Fan Sentiment Study
+Notes: 
+
+***
+
+### Introducing the Yogurt Data Set
+Notes: Because of online purchases and retail data and purchase data, there all this pattern that identifies the human behavior.  
+
+***
+
+### Histograms Revisited
+Notes:
+
+```{r Histograms Revisited}
+
+yo <- read.csv('yogurt.csv')
+str(yo)
+
+#change the id from an int to factor
+yo$id<-factor(yo$id)
+str(yo)
+
+## Creating a histrogram and write about what we notice
+colnames(yo)
+
+ggplot(aes(price),data=yo) + geom_histogram(binwidth=5)
+
+```
+Notes: The historgram tell us an interesting story about the price of yogursts and the amount of yogurts that were purchased. Assuming we have multiple types of yogurts, usually going for the less priced yogurt would be considered as fake brands, while the reason of an expensive brand is because it come from more real source of yogurt. Therefore, there is a large count of prices that yogurts were sold a higher price, medium price, and low prices. This histogram shows us a biased model.
+
+***
+
+### Number of Purchases
+Notes:
+
+```{r Number of Purchases}
+summary(yo)
+length(unique(yo$price))
+table(yo$price)
+
+colnames(yo)
+str(yo)
+
+yo <-transform(yo, all.purchases = strawberry + blueberry + pina.colada + plain + mixed.berry)
+
+
+yo
+```
+
+***
+
+### Prices over Time
+Notes:
+
+```{r Prices over Time}
+
+ggplot(aes(all.purchase), data=yo) + geom_histogram()
+
+colnames(yo)
+ggplot(aes(time,price),data=yo) + geom_jitter(alpha= .1, position= position_jitter(h=0))+
+  coord_trans(y='sqrt')
+```
+Notes: Noticed that over period of time, there is certain price that stands out, specially identifying the time that consumers are likely to be purchasing these yogurts.
+
+
+
+***
+
+### Sampling Observations
+Notes: Taking a sample is usally good when you have data points stacked on top of each other.
+
+***
+
+### Looking at Samples of Households
+
+```{r Looking at Sample of Households}
+set.seed(5787)
+
+sample.ids<-sample(levels(yo$id),16)
+sample.ids
+
+
+ggplot(aes(time,price), data=subset(yo, id %in% sample.ids)) + 
+  facet_wrap(~ id) +
+  geom_line()+
+geom_point(aes(size=all.purchase),pch =1)
+
+```
+
+***
+
+### The Limits of Cross Sectional Data
+Notes:
+
+***
+
+### Many Variables
+Notes: 
+
+***
+
+### Scatterplot Matrix
+Notes: Visualization to help identify each other 
+```{r}
+install.packages('GGally')
+library(GGally)
+
+
+# set the seed for reproducible results
+
+set.seed(1836)
+
+pf_subset<-pf[,c(2:15)]
+
+names(pf_subset)
+ggpairs(pf_subset[sample.int(nrow(pf_subset),1000),])
+
+names(pf)
+## Facebook dataset
+
+pf_subset = pf[, c('friendships_initiated', 'friend_count')]
+# this is the same as..
+pf_subset <- subset(pf, select = -c(userid, year_joined))
+
+```
+
+***
+
+### Even More Variables
+Notes:
+
+***
+
+### Heat Maps
+Notes:
+
+```{r}
+nci <- read.table("nci.tsv")
+colnames(nci) <- c(1:64)
+```
+
+```{r}
+library(reshape2)
+nci.long.samp <- melt(as.matrix(nci[1:200,]))
+names(nci.long.samp) <- c("gene", "case", "value")
+head(nci.long.samp)
+
+
+#to make the heat map
+ggplot(aes(y = gene, x = case, fill = value),
+  data = nci.long.samp) +
+  geom_tile() +
+  scale_fill_gradientn(colours = colorRampPalette(c("blue", "red"))(100))
+```
+
+
+***
+
+### Analyzing Three of More Variables
+Reflection:It is most common that most datasets will be multivariate data, and knowing how to navigate thru it is very important. In this lesson we learned about, plotting condition summaries based on the size of the bucket, we learned about using tidyr package to melt or transform the data in two wide and long format. This is helpful for reshaping the dataset. Using more mathematical solution, for instance, plotting the histogram. Some variables are common can be biased with each other, and identifying bias-variance is very important as can tell us a different story. Especially by taking a sample of the dataset, which makes things most understandable.   
+
+#Create a concept
+
+***
+
+Click **KnitHTML** to see all of your hard work and to have an html
+page of this lesson, your answers, and your notes!
+

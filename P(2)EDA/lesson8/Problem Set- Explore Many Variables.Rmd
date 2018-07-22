@@ -1,0 +1,106 @@
+---
+title: 'Lesson8: Problem Set: Explore Many Variables'
+author: "Beltino Goncalves"
+date: "November 2, 2017"
+output: html_document
+---
+
+
+# Price Histogrms with Face and Color
+```{r diamonds}
+library(ggplot2)
+data(diamonds)
+
+ggplot(aes(price, fill= cut),data=diamonds) + 
+  geom_histogram() + 
+  facet_wrap(~color) +
+  scale_fill_brewer(type='qual')+
+  scale_x_log10() +
+  ylim(c(0,600))
+
+?scale_fill_brewer
+```
+
+
+#Price vs. Table Colored by Cut
+```{r}
+ggplot(aes(x=table,y=price, fill= cut), data=diamonds) +
+         geom_point(aes(color=cut)) +
+  scale_color_brewer(type = 'qual') +
+  scale_x_continuous(breaks = seq(50,80,2))+
+coord_cartesian(xlim=c(50,80))
+
+
+```
+
+# Price Vs. Volume and Diamond Clarity
+
+```{r}
+##omit the top 1% of diamond volumes
+names(diamonds)
+Volume= diamonds$x * diamonds$y * diamonds$y 
+
+ggplot(aes(Volume,price), data=diamonds) + 
+  geom_point(aes(color=clarity))+
+  scale_color_brewer(type = 'div') + 
+  scale_y_log10() +
+  xlim(0, quantile(diamonds$Volume, .99)) + 
+  coord_cartesian(xlim=c(0,300))
+
+```
+
+# Proportion of Friendships Initiated
+Many interesting variables are derived from two or more others.For example, we might wonder how much of a person's network ona service like Facebook the user actively initiated. Two userswith the same degree (or number of friends) might be very different if one initiated most of those connections on the service, while the other initiated very few. So it could be useful to consider this proportion of existing friendships that the user initiated. This might be a good predictor of how active a user is compared with their peers, or other traits, such as personality (i.e., is this person an extrovert?).
+```{r}
+pf <- read.delim('pseudo_facebook.tsv')
+
+summary
+names(pf)
+pf$prop_initiated <- pf$friendships_initiated / pf$friend_count
+
+summary(pf$prop_initiated)
+```
+
+
+
+# Prop_Initiated vs. tenure
+
+```{r}
+#Create year Join
+pf$year_joined<-floor(2014-pf$tenure/365)
+
+#created a bucket list
+pf$year_joined.bucket <- cut(pf$year_joined, breaks =c(2004,2009,2011,2012,2014))
+
+# Line graph of the median proportion of friendships initiated ('prop_initiated') vs. tenure and color the line segment
+ggplot(aes(tenure,prop_initiated), data=subset(pf, tenure >= 1)) + 
+  geom_line( stat = 'summary', fun.y = median) +
+  ylim(c(0,.95)) + geom_smooth(aes(color = year_joined.bucket),method = lm)
+
+?geom_smooth()
+```
+For the group with the largest proportion of friendships initiated, what is the group's average (mean) proportion of friendships initiated?
+
+```{r}
+
+with(subset(pf,year_joined>2012 & year_joined <=2014),summary(prop_initiated))
+
+```
+why do you think this group's porportion of friendships initiated is higher than the others? 
+Someone in this group's proportion of friendship initiated will be higher than the others because based on having low tenure than the other groups. They are more likely to being exposed to every contact that Facebook features and are likely to initiate friendships. 
+
+```{r}
+ggplot(aes(x= cut, y = price/carat), data=diamonds) +
+  geom_point(aes(color=color), alpha=.5, position = position_jitter(width = 0.4))+
+  scale_color_brewer(type = 'div') +
+  facet_wrap(~clarity)
+  
+```
+
+
+#Gapminder Multivariate Analysis
+The Gapminder website contains over 500 data sets with information about
+the world's population. Your task is to continue the investigation you did at the end of Problem Set 4 or you can start fresh and choose a different data set from Gapminder. If you're feeling adventurous or want to try some data munging see if you can find a data set or scrape one from the web. In your investigation, examine 3 or more variables and create 2-5 plots that makeuse of the techniques from Lesson 5.
+
+
+
